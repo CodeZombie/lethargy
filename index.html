@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="style/hella.css">
+	<link rel="stylesheet" href="style/style.css">
+	<script type="text/javascript" src="js/engine.js"></script>
+	<script type="text/javascript">
+		//load resources BEFORE init() javascript starts executing. this way, nothing fucks up
+		//USE CHERRYPY AND SQLALCHEMY FOR THE BACKEND
+		loadResource();
+		fuck = 0;
+		function loadResource() {
+			resource_ground_tiles = Engine.ResourceManager.loadImage("tile.png");
+			resource_items = Engine.ResourceManager.loadImage("entities.png");
+			resource_interface = Engine.ResourceManager.loadImage("interface.png");
+		}
+
+		function init() {
+			//init canvas
+			Engine.Graphics.attachCanvas(document.getElementById("gameCanvas"));
+			Engine.Graphics.getCanvas().width = 512;
+			Engine.Graphics.getCanvas().height = 384;
+			Engine.Graphics.disableInterpolation();
+			Engine.Graphics.setScale(1);
+			//setup sprites
+			ground_spritesheet = Engine.SpriteManager.createSpriteSheet(resource_ground_tiles, 32);
+			entity_spritesheet = Engine.SpriteManager.createSpriteSheet(resource_items, 32);
+			interface_spritesheet = Engine.SpriteManager.createSpriteSheet(resource_interface, 32);
+			
+			winduh = Engine.Interface.WindowManager.createWindow(64, 128, 256+128, 128, interface_spritesheet, []);
+			Engine.Interface.WindowManager.setMouseDownEvent(winduh, function(id_) {Engine.Interface.WindowManager.deleteWindow(id_);});
+			
+			window2 = Engine.Interface.WindowManager.createWindow(32, 96, 256, 128, interface_spritesheet, []);
+			Engine.Interface.WindowManager.setMouseDownEvent(window2, function(id_) {Engine.Interface.WindowManager.bringToFront(id_);});
+			
+			//fill map
+			Engine.Map.fillMap('{"mapwidth"  : 16, "mapheight" : 12, "tiles"  : [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,2,2,2,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0] }');
+			
+			draw();
+			//loop();
+		}
+		
+		function loop() {
+		  //draw();//DONT DO THIS IN HERE, ITS SLOW AS FUCK. ONLY DRAW WHEN NEEDED
+		  requestAnimationFrame(loop); //loops without blocking the entire browser thread
+		}
+		
+		function draw() {
+			Engine.Graphics.clear();
+			Engine.Graphics.fill("#000");
+			Engine.Graphics.drawMap(ground_spritesheet);
+			Engine.Graphics.drawSprite(entity_spritesheet, 69, 32, 32);
+			Engine.Graphics.drawSprite(entity_spritesheet, 53, 32, 128+32);
+			Engine.Interface.WindowManager.draw(interface_spritesheet);
+			//Engine.Graphics.drawWindow(interface_spritesheet, winduh);
+			//Engine.Graphics.drawWindow(interface_spritesheet, window2);
+		}
+		Engine.Graphics.attachRedrawFunction(draw);//so the engine can redraw the scene when it needs to
+		
+	</script>
+	<link href='https://fonts.googleapis.com/css?family=Oxygen' rel='stylesheet' type='text/css'>
+	<title>game screen</title>
+</head>
+<body onLoad="init();">
+	<div class="grid">
+		<div class="row">
+			<div class="column" id="canvasContainer">
+				<canvas id="gameCanvas" width="620" height="480"></canvas>
+			</div>
+		</div>
+		<div class="row">
+			<div class="column">
+				non critical shit goes here yo
+			</div>
+		</div>
+	</div>
+</body>
