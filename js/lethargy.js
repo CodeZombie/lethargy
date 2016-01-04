@@ -1,7 +1,19 @@
-var Lethargy = Lethargy||{};
-Lethargy.Map = Lethargy.Map||{};
-Lethargy.Interface = Lethargy.Interface||{};
+/*
+todo:
+setup a draw-queue so that sub-window level primitives and images are always drawn below windows.
+(eg: borders drawn around entities on their hover events can overlap windows. This is bad.
 
+take a look at the current mouse system. It can probably be optimized. maybe try some quad-treeing or re-organize the onMouseMove loop.
+
+add the hover returns to entities too.
+
+add the MouseHoverOff event to the window system
+
+test deleting windows and deleting entities. Im not 100% confident the systems work under weird circumstances. (maybe they do though)
+*/
+
+var Lethargy = Lethargy||{};
+Lethargy.Interface = Lethargy.Interface||{};
 Lethargy.Mouse = {x : 0, y : 0};
 
 Lethargy.System = (function() {
@@ -11,13 +23,23 @@ Lethargy.System = (function() {
 			canvas.addEventListener("mousedown", function(event) {
 				//add other listener events here
 				Lethargy.System.updateMouseCoords(event);
-				Lethargy.Interface.WindowManager.doMouseDown();
+				
+				//we check clicks in order of z-index.
+				//windows appear on top, so they are checked first. If no window is clicked, then we check entities, etc.
+				//this is so that you cannot click through windows.
+				
+				if(Lethargy.Interface.WindowManager.doMouseDown() == 0) { // if no window is clicked...
+					Lethargy.EntityManager.doMouseDown();
+				}
 				//console.log("Mouse: x: " + Lethargy.Mouse.x + " y: " + Lethargy.Mouse.y);
 			});
 			canvas.addEventListener("mousemove", function(event) {
 				//add other listener events here
 				Lethargy.System.updateMouseCoords(event);
-				Lethargy.Interface.WindowManager.doMouseMove();
+				
+				if(Lethargy.Interface.WindowManager.doMouseHover() == 0) {
+					Lethargy.EntityManager.doMouseHover();
+				}
 				
 			});
 			canvas.addEventListener("mouseup", function(event) {
@@ -94,6 +116,14 @@ Lethargy.Graphics = (function() {
 			_canvasContext.fillRect(0,0,_canvas.width,_canvas.height);
 		},
 		
+		drawSquare : function(x_, y_, w_, h_, color_) {
+			_canvasContext.beginPath();
+			_canvasContext.strokeStyle = color_;
+			_canvasContext.rect(x_*_drawScale, y_*_drawScale, w_*_drawScale, h_*_drawScale);
+			_canvasContext.stroke();
+			
+		},
+		
 		drawSprite : function(spriteSheetID_, spriteIndex_, x_, y_) {
 			var s = Lethargy.SpriteManager.getSpriteSheet(spriteSheetID_);
 			
@@ -116,8 +146,8 @@ Lethargy.Graphics = (function() {
 		
 		drawMap : function(spriteSheet_) {
 			var tileSize = Lethargy.SpriteManager.getSpriteSheet(spriteSheet_).frameSize;
-			for(y = 0; y < Lethargy.Map.getHeight(); y++) {
-				for(x = 0; x < Lethargy.Map.getWidth(); x++) {
+			for(var y = 0; y < Lethargy.Map.getHeight(); y++) {
+				for(var x = 0; x < Lethargy.Map.getWidth(); x++) {
 					Lethargy.Graphics.drawSprite(spriteSheet_, Lethargy.Map.getTiles()[(y*Lethargy.Map.getWidth()) + x], tileSize*x, tileSize*y);
 				}
 			}		
@@ -127,18 +157,18 @@ Lethargy.Graphics = (function() {
 			var s = Lethargy.SpriteManager.getSpriteSheet(w_.spriteSheet);
 			
 			//draw inner
-			for(y=0;y < (((w_.y + w_.height) - w_.y) - (s.frameSize * 2))/s.frameSize; y++) {
-				for(x=0; x < (((w_.x + w_.width) - w_.x) - (s.frameSize * 2)) / s.frameSize; x++) {
+			for(var y=0;y < (((w_.y + w_.height) - w_.y) - (s.frameSize * 2))/s.frameSize; y++) {
+				for(var x=0; x < (((w_.x + w_.width) - w_.x) - (s.frameSize * 2)) / s.frameSize; x++) {
 					Lethargy.Graphics.drawSprite(w_.spriteSheet, 4, w_.x + s.frameSize + (x*s.frameSize), w_.y + s.frameSize + (y*s.frameSize));
 				}
 			}
-			for(i=0; i < (((w_.x + w_.width) - w_.x) - (s.frameSize * 2)) / s.frameSize; i++) {
+			for(var i=0; i < (((w_.x + w_.width) - w_.x) - (s.frameSize * 2)) / s.frameSize; i++) {
 				Lethargy.Graphics.drawSprite(w_.spriteSheet, 1, w_.x + s.frameSize + (i*s.frameSize), w_.y);
 				Lethargy.Graphics.drawSprite(w_.spriteSheet, 7, w_.x + s.frameSize + (i*s.frameSize), w_.y+w_.height-s.frameSize);
 			}
 			
 			//draw left and right columns
-			for(i=0; i < (((w_.y + w_.height) - w_.y) - (s.frameSize * 2))/s.frameSize; i++) {
+			for(var i=0; i < (((w_.y + w_.height) - w_.y) - (s.frameSize * 2))/s.frameSize; i++) {
 				Lethargy.Graphics.drawSprite(w_.spriteSheet, 3, w_.x, w_.y  + s.frameSize + (i*s.frameSize));
 				Lethargy.Graphics.drawSprite(w_.spriteSheet, 5, w_.x + w_.width-s.frameSize, w_.y  + s.frameSize + (i*s.frameSize));
 			}
@@ -199,8 +229,8 @@ Lethargy.SpriteManager = (function() {
 			
 			var iterator = 0;
 			//calculate positions of each sprite in the spritesheet
-			for(y = 0; y < img.height/frameSize_; y++){
-				for(x = 0; x < img.width/frameSize_; x++){
+			for(var y = 0; y < img.height/frameSize_; y++){
+				for(var x = 0; x < img.width/frameSize_; x++){
 					_spriteSheets[_indexMarker].sprites[iterator] = {x : (x*frameSize_), y : (y*frameSize_) };
 					iterator++;
 				}
@@ -217,12 +247,12 @@ Lethargy.SpriteManager = (function() {
 	};
 })();
 
-//**** ENTITIES ****
 Lethargy.EntityManager = (function() {
-	//Entitie layout:
+	//Entity layout:
 	//x, y, spriteSheet, spriteIndex, id, onClick, onHover, zInndex
 	_entities = [];
 	_IDIterator = 0;
+	_currentHoverID = -1;
 	return {
 		createEntity : function(x_, y_, spriteSheet_, spriteIndex_, zIndex_) {
 			//insert entity into array next to z-indexes of the same value.
@@ -232,7 +262,7 @@ Lethargy.EntityManager = (function() {
 			//this is so that entities created latest are drawn on top, as you would intuitively expect.
 			//0 = lowest. 99999+ = highest
 			var index = 0;
-			for(i=0;i<_entities.length;i++) {
+			for(var i=0;i<_entities.length;i++) {
 				if(_entities[i] !== undefined) {
 					if(zIndex_ < _entities[i].zIndex) {
 						index = i;
@@ -247,27 +277,108 @@ Lethargy.EntityManager = (function() {
 		},
 		
 		getEntity : function(id_) {
-			
+			var index = Lethargy.EntityManager.getEntityIndex(id_);
+			if(index !== -1 && _entities[index] !== undefined) {
+				return _entities[index];
+			}
+			return undefined;
 		},
 		
-		entities : _entities,
+		getEntityIndex : function(id_) {
+			for(var i=0;i<_entities.length;i++) {
+				if(_entities[i] !== undefined) {
+					if(_entities[i].id == id_) {
+						return i;
+					}
+				}
+			}
+			return -1;
+		},
 		
 		removeEntity : function(id_) {
 			//splice out the entity. done.
-		}, 
+		},
+
+		setMouseDownEvent : function(id_, function_) {
+			var e = _entities[Lethargy.EntityManager.getEntityIndex(id_)];
+			if(e !== undefined) {
+				e.mouseDownEvent = function_;
+			}
+		},
+		
+		doMouseDown : function() {
+			var scale = Lethargy.Graphics.getScale();
+			
+			for(var i=_entities.length;i>=0;i--){//traverse the list backwards
+				if(_entities[i] !== undefined) {
+					if(_entities[i].mouseDownEvent !== undefined) {
+						var s = Lethargy.SpriteManager.getSpriteSheet(_entities[i].spriteSheet);
+						if(Lethargy.Mouse.x >= _entities[i].x*scale && Lethargy.Mouse.x <= _entities[i].x*scale + s.frameSize*scale && Lethargy.Mouse.y >= _entities[i].y*scale && Lethargy.Mouse.y <= _entities[i].y*scale + s.frameSize*scale) {	
+							_entities[i].mouseDownEvent(_entities[i].id);
+							break;
+						}
+					}
+				}
+			}		
+		},
+		
+		setMouseHoverEvent : function(id_, function_) {
+			var e = _entities[Lethargy.EntityManager.getEntityIndex(id_)];
+			if(e !== undefined) {
+				e.mouseHoverEvent = function_;
+			}
+		},
+		
+		doMouseHover : function() {
+			var scale = Lethargy.Graphics.getScale();
+			for(var i=_entities.length;i>=0;i--){//traverse the list backwards
+				if(_entities[i] !== undefined) {
+					if(_entities[i].mouseHoverEvent !== undefined) {
+						var s = Lethargy.SpriteManager.getSpriteSheet(_entities[i].spriteSheet);
+						if(Lethargy.Mouse.x >= _entities[i].x*scale && Lethargy.Mouse.x <= _entities[i].x*scale + s.frameSize*scale && Lethargy.Mouse.y >= _entities[i].y*scale && Lethargy.Mouse.y <= _entities[i].y*scale + s.frameSize*scale) {	
+							
+							_entities[i].mouseHoverEvent(_entities[i].id);
+							
+							if(_currentHoverID !== -1 && _currentHoverID !== _entities[i].id) {
+								//we need to process a mouseHoverOffEvent event for _currentHoverID
+								var index = Lethargy.EntityManager.getEntityIndex(_currentHoverID);
+								if(_entities[index] !== undefined && _entities[index].mouseHoverOffEvent !== undefined) {
+									_entities[index].mouseHoverOffEvent(_currentHoverID);
+								}
+							}
+							
+							_currentHoverID = _entities[i].id;
+							return;
+						}
+					}
+				}
+			}
+			if(_currentHoverID != -1) {
+				//we need to process a mouseHoverOffEvent event for _currentHoverID
+				var index = Lethargy.EntityManager.getEntityIndex(_currentHoverID);
+				if(_entities[index] != undefined && _entities[index].mouseHoverOffEvent != undefined) {
+					_entities[index].mouseHoverOffEvent(_currentHoverID);
+				}
+			}			
+			_currentHoverID = -1;
+		},
+		setMouseHoverOffEvent : function(id_, function_) {
+			var e = _entities[Lethargy.EntityManager.getEntityIndex(id_)];
+			if(e !== undefined) {
+				e.mouseHoverOffEvent = function_;
+			}
+		},
 		
 		draw : function() {
-			for(i=0;i<_entities.length;i++) {
+			for(var i=0;i<_entities.length;i++) {
 				if(_entities[i] !== undefined) {
 					Lethargy.Graphics.drawSprite(_entities[i].spriteSheet, _entities[i].spriteIndex, _entities[i].x, _entities[i].y);
 				}
-			}				
+			}		
 		}
 	};
 })();
 
-
-//**** MAP ****
 Lethargy.Map = (function() {
 	_width = 0; //# of tiles, not pixels
 	_height = 0; //# of tiles, not pixels
@@ -291,9 +402,6 @@ Lethargy.Map = (function() {
 	};
 })();
 
-//**** INTERFACE *****
-	
-	//**** WINDOW MANAGER ****
 Lethargy.Interface.WindowManager = (function() {
 	//windows are created in the array, and are given a specific ID based on an iterating numbers.
 	//when a window is destroyed, it is spliced from the array, which shifts the position of all other windows
@@ -332,7 +440,7 @@ Lethargy.Interface.WindowManager = (function() {
 		
 		getIndexFromID : function(id_) {
 			//very expensive. Do not call from inf loops
-			for(i=0;i<_windows.length;i++) {
+			for(var i=0;i<_windows.length;i++) {
 				if(parseInt(_windows[i].id) === parseInt(id_)) {
 					return i;
 				}
@@ -351,39 +459,40 @@ Lethargy.Interface.WindowManager = (function() {
 		
 		draw : function() {
 			//call drawWindow in z-Index order.
-			for(ii=0;ii<_windows.length;ii++){
-				if(_windows[ii] !== undefined) {
-					Lethargy.Graphics.drawWindow(_windows[ii]);
+			for(var i=0;i<_windows.length;i++){
+				if(_windows[i] !== undefined) {
+					Lethargy.Graphics.drawWindow(_windows[i]);
 				}
 			}
 		},
 		
 		doMouseDown : function() {
-			//check if any windows have been clicked
 			var scale = Lethargy.Graphics.getScale();
-			for(i=_windows.length;i>=0;i--){//traverse the list of windows backwards
+			for(var i=_windows.length;i>=0;i--){//traverse the list of windows backwards
 				if(_windows[i] !== undefined) {
-					if(_windows[i].mouseDownEvent !== undefined) {
-						if(Lethargy.Mouse.x >= _windows[i].x*scale && Lethargy.Mouse.x <= _windows[i].x*scale + _windows[i].width*scale && Lethargy.Mouse.y >= _windows[i].y*scale && Lethargy.Mouse.y <= _windows[i].y*scale + _windows[i].height*scale) {
-							var s = Lethargy.SpriteManager.getSpriteSheet(_windows[i].spriteSheet);
-							if(Lethargy.Mouse.x >= _windows[i].x*scale && Lethargy.Mouse.y >= _windows[i].y*scale && Lethargy.Mouse.x <= (_windows[i].x + _windows[i].width)*scale && Lethargy.Mouse.y <= (_windows[i].y + s.frameSize)*scale) {
-								_draggedWindowID = _windows[i].id;
-								_draggedWindowIndex = i;
-								_draggedWindowOffsetX = Lethargy.Mouse.x/scale - _windows[i].x;
-								_draggedWindowOffsetY = Lethargy.Mouse.y/scale - _windows[i].y;
-							}			
+					if(Lethargy.Mouse.x >= _windows[i].x*scale && Lethargy.Mouse.x <= _windows[i].x*scale + _windows[i].width*scale && Lethargy.Mouse.y >= _windows[i].y*scale && Lethargy.Mouse.y <= _windows[i].y*scale + _windows[i].height*scale) {
+						
+						var s = Lethargy.SpriteManager.getSpriteSheet(_windows[i].spriteSheet);
+						if(Lethargy.Mouse.x >= _windows[i].x*scale && Lethargy.Mouse.y >= _windows[i].y*scale && Lethargy.Mouse.x <= (_windows[i].x + _windows[i].width)*scale && Lethargy.Mouse.y <= (_windows[i].y + s.frameSize)*scale) {
+							_draggedWindowID = _windows[i].id;
+							_draggedWindowIndex = i;
+							_draggedWindowOffsetX = Lethargy.Mouse.x/scale - _windows[i].x;
+							_draggedWindowOffsetY = Lethargy.Mouse.y/scale - _windows[i].y;
+						}	
+						if(_windows[i].mouseDownEvent !== undefined) {		
 							_windows[i].mouseDownEvent(_windows[i].id);
-							console.log("Touch!");
-							return;
 						}
+						this.bringToFront(_windows[i].id);
+						return 1;//indicates that a window was clicked.
 					}
 				}
 			}
+			return 0;//no window was clicked.
 		},
 		
 		fixDragIndex : function() {
 			//we call this every time the _windows array is re-ordered.
-			//This is so we don't have to run getIndexFromID every single doMouseMove,
+			//This is so we don't have to run getIndexFromID every single doMouseHover,
 			//which can be incredibly expensive.
 			if(_draggedWindowIndex !== -1 && _draggedWindowID !== -1) {
 				if(_windows[_draggedWindowIndex].id !== _draggedWindowID) {
@@ -393,14 +502,40 @@ Lethargy.Interface.WindowManager = (function() {
 			}
 		},
 		
-		doMouseMove : function() {
-			if(_draggedWindowIndex !== -1) {
+		setMouseHoverEvent : function(id_, function_) {
+			var e = _windows[Lethargy.Interface.WindowManager.getIndexFromID(id_)];
+			if(e !== undefined) {
+				e.mouseHoverEvent = function_;
+			}
+		},
+		
+		
+		doMouseHover : function() {
+			if(_draggedWindowIndex !== -1) { //if a window is being dragged...
 				if(_windows[_draggedWindowIndex] !== undefined) {
 					var scale = Lethargy.Graphics.getScale();
 					_windows[_draggedWindowIndex].x = Lethargy.Mouse.x/scale - _draggedWindowOffsetX;
 					_windows[_draggedWindowIndex].y = Lethargy.Mouse.y/scale - _draggedWindowOffsetY;
 					Lethargy.Graphics.redraw();
+					if(_windows[_draggedWindowIndex].mouseHoverEvent !== undefined) {
+						_windows[_draggedWindowIndex].mouseHoverEvent(_windows[_draggedWindowIndex].id);
+					}
+					return 1;
 				}
+			}else {
+				var scale = Lethargy.Graphics.getScale();
+				for(var i=_windows.length;i>=0;i--){//traverse the list of windows backwards
+					if(_windows[i] !== undefined) {
+						if(Lethargy.Mouse.x >= _windows[i].x*scale && Lethargy.Mouse.x <= _windows[i].x*scale + _windows[i].width*scale && Lethargy.Mouse.y >= _windows[i].y*scale && Lethargy.Mouse.y <= _windows[i].y*scale + _windows[i].height*scale) {
+							if(_windows[i].mouseHoverEvent !== undefined) {
+								_windows[i].mouseHoverEvent(_windows[i].id);
+								
+							}
+							return 1;//indicates that a window was hovered over.
+						}
+					}
+				}
+			return 0;//no window was hovered.
 			}
 		},
 		

@@ -38,13 +38,32 @@
 			//setup entities
 			//if(typeof entity_spritesheet !== 'undefined') { //this if case is how to properly check for messed up resource/spritesheets.
 			//I have it commented out to demonstrate the Engine's ability to handle broken resources (pink squares)
-				Lethargy.EntityManager.createEntity(32, 64, entity_spritesheet, 6, 0); //pink goo
-				Lethargy.EntityManager.createEntity(39, 64, entity_spritesheet, 354, 1);
-			//}
+			doop = Lethargy.EntityManager.createEntity(32, 64, entity_spritesheet, 6, 0); //pink goo
+			
+			Lethargy.EntityManager.setMouseDownEvent(doop, function(id_) {
+				alert("CLICK!"); 
+			});
+			
+			for(var i = 0; i < 120; i++) {
+				var entity_stress_test = Lethargy.EntityManager.createEntity(Math.floor((Math.random()*512)/32)*32, Math.floor((Math.random()*512)/32)*32, entity_spritesheet, Math.floor(Math.random()*500), 0); //pink goo
+				Lethargy.EntityManager.setMouseHoverEvent(entity_stress_test, function(id_) {
+					Lethargy.Graphics.redraw();
+					var e = Lethargy.EntityManager.getEntity(id_);
+					var s = Lethargy.SpriteManager.getSpriteSheet(e.spriteSheet);
+					Lethargy.Graphics.drawSquare(e.x, e.y, s.frameSize, s.frameSize, "#0f0");
+				});
+				
+				Lethargy.EntityManager.setMouseHoverOffEvent(entity_stress_test, function(id_) {
+					Lethargy.Graphics.redraw();
+				});
+			}
+			
+			
 			
 			//setup interface
-			Lethargy.Interface.WindowManager.setMouseDownEvent(Lethargy.Interface.WindowManager.createWindow(64, 128, 256+128, 128, interface_spritesheet, []), function(id_) {Lethargy.Interface.WindowManager.bringToFront(id_);});
-			Lethargy.Interface.WindowManager.setMouseDownEvent(Lethargy.Interface.WindowManager.createWindow(32, 96, 256, 128, interface_spritesheet, []), function(id_) {Lethargy.Interface.WindowManager.bringToFront(id_);});
+			bother = Lethargy.Interface.WindowManager.createWindow(64, 64, 96, 96, interface_spritesheet, []);
+			Lethargy.Interface.WindowManager.setMouseHoverEvent(bother, function(id_) {console.log("bollocks");});
+			Lethargy.Interface.WindowManager.setMouseDownEvent(Lethargy.Interface.WindowManager.createWindow(32, 96, 256, 128, interface_spritesheet, []), function(id_) {});
 			
 			//fill map
 			Lethargy.Map.fill('{"mapwidth"  : 16, "mapheight" : 12, "tiles"  : [9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,8] }');
