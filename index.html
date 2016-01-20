@@ -3,11 +3,10 @@
 	<meta charset="utf-8">
 	<link rel="stylesheet" href="style/hella.css">
 	<link rel="stylesheet" href="style/style.css">
-	<script type="text/javascript" src="js/lethargy.js"></script>
+	<script type="text/javascript" src="engine.js"></script>
 	<script type="text/javascript">
 		//load resources BEFORE init() starts executing. this way, everything loads in order.
 		//USE CHERRYPY AND SQLALCHEMY FOR THE BACKEND
-		
 		loadResource();
 
 		function loadResource() {
@@ -21,72 +20,56 @@
 				resource_interface = id_;
 			});
 		}
-
+		
 		function init() {
-			//init canvas
 			Lethargy.Graphics.attachCanvas(document.getElementById("gameCanvas"));
 			Lethargy.Graphics.getCanvas().width = 512;
 			Lethargy.Graphics.getCanvas().height = 384;
 			Lethargy.Graphics.disableInterpolation();
 			Lethargy.Graphics.setScale(1);
+			Lethargy.Graphics.attachRedrawFunction(draw);
 			
-			//setup sprites
-			ground_spritesheet = Lethargy.SpriteManager.createSpriteSheet(resource_ground_tiles, 32);
-			entity_spritesheet = Lethargy.SpriteManager.createSpriteSheet(resource_items, 32);
-			interface_spritesheet = Lethargy.SpriteManager.createSpriteSheet(resource_interface, 32);
+			Lethargy.Mouse.initialize();
+
+			ground_spritesheet = Lethargy.SpriteSheetManager.createSpriteSheet(Lethargy.ResourceManager.getImage(resource_ground_tiles), 32, 32);
+			entity_spritesheet = Lethargy.SpriteSheetManager.createSpriteSheet(Lethargy.ResourceManager.getImage(resource_items), 32, 32);
+			interface_spritesheet = Lethargy.SpriteSheetManager.createSpriteSheet(Lethargy.ResourceManager.getImage(resource_interface), 32, 32);
 			
-			//setup entities
-			//if(typeof entity_spritesheet !== 'undefined') { //this if case is how to properly check for messed up resource/spritesheets.
-			//I have it commented out to demonstrate the Engine's ability to handle broken resources (pink squares)
-			doop = Lethargy.EntityManager.createEntity(32, 64, entity_spritesheet, 6, 0); //pink goo
+			thing = Lethargy.EntityManager.getEntity(Lethargy.EntityManager.createEntity(64, 64, 32, 32));
+			thing.setSprite(Lethargy.SpriteSheetManager.getSpriteSheet(resource_items), 0);
 			
-			Lethargy.EntityManager.setMouseDownEvent(doop, function(id_) {
-				alert("CLICK!"); 
-			});
+			Lethargy.MouseEventManager.createMouseEvent(Lethargy.MouseEventTypes.mouseup, thing, 0,0,32,32, function() { alert("CLICK"); });
 			
-			for(var i = 0; i < 120; i++) {
-				var entity_stress_test = Lethargy.EntityManager.createEntity(Math.floor((Math.random()*512)/32)*32, Math.floor((Math.random()*512)/32)*32, entity_spritesheet, Math.floor(Math.random()*500), 0); //pink goo
-				Lethargy.EntityManager.setMouseHoverEvent(entity_stress_test, function(id_) {
-					Lethargy.Graphics.redraw();
-					var e = Lethargy.EntityManager.getEntity(id_);
-					var s = Lethargy.SpriteManager.getSpriteSheet(e.spriteSheet);
-					Lethargy.Graphics.drawSquare(e.x, e.y, s.frameSize, s.frameSize, "#0f0");
-				});
-				
-				Lethargy.EntityManager.setMouseHoverOffEvent(entity_stress_test, function(id_) {
-					Lethargy.Graphics.redraw();
-				});
-			}
+			//type_, parent_, offset_x_, offset_y_, width_, height_, event_
 			
 			
+			Lethargy.MapManager.populate('{"mapwidth"  : 16, "mapheight" : 12, "tiles"  : [9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,8] }');
+			Lethargy.MapManager.setSpriteSheet(Lethargy.SpriteSheetManager.getSpriteSheet(ground_spritesheet));
 			
-			//setup interface
-			bother = Lethargy.Interface.WindowManager.createWindow(64, 64, 96, 96, interface_spritesheet, []);
-			Lethargy.Interface.WindowManager.setMouseHoverEvent(bother, function(id_) {console.log("bollocks");});
-			Lethargy.Interface.WindowManager.setMouseDownEvent(Lethargy.Interface.WindowManager.createWindow(32, 96, 256, 128, interface_spritesheet, []), function(id_) {});
+			var dong = Lethargy.WindowManager.createWindow(128,128,128,128, Lethargy.SpriteSheetManager.getSpriteSheet(interface_spritesheet));
 			
-			//fill map
-			Lethargy.Map.fill('{"mapwidth"  : 16, "mapheight" : 12, "tiles"  : [9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,8] }');
+			Lethargy.MouseEventManager.createMouseEvent(Lethargy.MouseEventTypes.mouseup, Lethargy.WindowManager.getWindow(dong), 0,0,-1,-1, function() { alert("WINDOW CLICK"); });
 			
 			draw();
 			//loop();
 		}
 		
 		function loop() {
-		  //draw();//DONT DO THIS IN HERE, ITS SLOW. ONLY DRAW WHEN NEEDED
 		  requestAnimationFrame(loop); //loops without blocking the entire browser thread
 		}
 		
 		function draw() {
 			Lethargy.Graphics.clear();
-			Lethargy.Graphics.fill("#000");
-			Lethargy.Graphics.drawMap(ground_spritesheet);
+			Lethargy.MapManager.draw();
 			Lethargy.EntityManager.draw();
-			Lethargy.Interface.WindowManager.draw(interface_spritesheet);
+			Lethargy.WindowManager.draw();
+			//Lethargy.Graphics.drawMap(ground_spritesheet);
+			//Lethargy.EntityManager.draw();
+			//Lethargy.Interface.WindowManager.draw(interface_spritesheet);
 		}
 		
-		Lethargy.Graphics.attachRedrawFunction(draw);//so the engine can redraw the screen when it needs to
-		
+		//so the engine can redraw the screen when it needs to
+
 	</script>
 	<link href='https://fonts.googleapis.com/css?family=Oxygen' rel='stylesheet' type='text/css'>
 	<title>game screen</title>
