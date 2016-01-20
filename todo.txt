@@ -1,3 +1,0 @@
-Explode Engine.js into different files.
-Add more comments
-Go through code, make sure everything works as intended.
