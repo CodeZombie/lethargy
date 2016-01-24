@@ -4,6 +4,7 @@
 var Lethargy = Lethargy||{};
 
 Lethargy.Entity = function(id_, x_, y_) {
+	this.objectType = "entity";
 	this.id = id_;
 	this.x = x_;
 	this.y = y_;
@@ -12,9 +13,12 @@ Lethargy.Entity = function(id_, x_, y_) {
 };
 	
 Lethargy.Entity.prototype.setSprite = function(spriteSheet_, spriteIndex_) {
+	if(spriteSheet_ === undefined) {
+		Lethargy.System.printError("Attemping to set undefined sprite to entity with id: " + this.id);
+		return;
+	}
 	this.spriteSheet = spriteSheet_;
 	this.spriteIndex = spriteIndex_;
-	
 };
 
 Lethargy.Entity.prototype.draw = function() {
@@ -33,6 +37,10 @@ Lethargy.EntityManager = (function() {
 	
 	return{
 		createEntity : function(x_, y_, width_, height_) {
+			if(width_ <= 0 && height_ <= 0) {
+				Lethargy.System.printError("Attempted to create entity with invalid dimensions");
+			}
+			
 			entities.push(new Lethargy.Entity(IDIterator, x_, y_));
 			IDIterator++;
 			return IDIterator-1;
@@ -44,7 +52,7 @@ Lethargy.EntityManager = (function() {
 					return i;
 				}
 			}
-			return -1;			
+			return;			
 		},
 		
 		getEntity : function(id_) {
@@ -53,7 +61,7 @@ Lethargy.EntityManager = (function() {
 					return entities[i];
 				}
 			}
-			return undefined;
+			return;
 		},
 		
 		deleteEntity : function(id_) {
@@ -82,15 +90,17 @@ var Lethargy = Lethargy||{};
 Lethargy.Graphics = (function() {
 	var canvas;
 	var canvasContext;
-	var redrawFunction;
 	var backgroundColor = "#0f0";
 	var scale = 1;
 	
 	return {
 		attachCanvas : function(canvas_) {
+			if(canvas_ === null || canvas_.tagName.toLowerCase() !== "canvas") {
+				Lethargy.System.fatalError("Attempted to attach invalid canvas");
+				return;
+			}
 			canvas = canvas_;
 			canvasContext = canvas.getContext("2d");
-			//Lethargy.system.init(); init mouse event listeners for canvas.
 		},
 		
 		getCanvas : function() {
@@ -111,16 +121,10 @@ Lethargy.Graphics = (function() {
 		
 		disableInterpolation : function() {
 			canvasContext.imageSmoothingEnabled = false;
-			canvasContext.webkitImageSmoothingEnabled = false;
+			/////////////////////////
+			// Does not work on IE //
+			/////////////////////////
 			canvasContext.mozImageSmoothingEnabled = false;			
-		},
-		
-		attachRedrawFunction : function(f_) {
-			redrawFunction = f_;
-		},
-		
-		redraw : function() {
-			redrawFunction();
 		},
 		
 		clear : function() {
@@ -128,6 +132,10 @@ Lethargy.Graphics = (function() {
 		},
 		
 		drawSquare : function(x_, y_, w_, h_, color_) {
+			if(w_ <= 0 || h_ <= 0) {
+				Lethargy.System.printError("Attempted to draw square with invalid dimensions");
+				return;
+			}
 			canvasContext.beginPath();
 			canvasContext.strokeStyle = color_;
 			canvasContext.rect(x_*scale, y_*scale, w_*scale, h_*scale);
@@ -199,40 +207,11 @@ Lethargy.Mouse = (function() {
 	var mouse_y;
 	
 	return {
-		
-		////////////////////////////////////////////////////////////////////
-		//// CONSIDER MOVING THIS INIT STUFF INTO MOUSEEVENTMANAGER.JS. ////
-		//// 			IT MAKES MORE SENSE FOR IT TO BE THERE.			////
-		////////////////////////////////////////////////////////////////////
-		initialize : function() {
-			var canvas = Lethargy.Graphics.getCanvas();
-			canvas.addEventListener("mousemove", function(event) {
-				Lethargy.Mouse.updateMouseCoordinates(event);
-				if(event.button === 0) { //2 for right click, 1 for middle. NOTE: DIFF ON IE 8.
-					Lethargy.MouseEventManager.checkMouseEvents(Lethargy.MouseEventTypes.mousemove);
-				}
-			});
-			
-			canvas.addEventListener("mousedown", function(event) {
-				Lethargy.Mouse.updateMouseCoordinates(event);
-				if(event.button === 0) {
-					Lethargy.MouseEventManager.checkMouseEvents(Lethargy.MouseEventTypes.mousedown);
-				}
-			});
-			
-			canvas.addEventListener("mouseup", function(event) {
-				Lethargy.Mouse.updateMouseCoordinates(event);
-				if(event.button === 0) {
-					Lethargy.MouseEventManager.checkMouseEvents(Lethargy.MouseEventTypes.mouseup);
-				}
-			});
-		},
-		
 		updateMouseCoordinates : function(mouseEvent_) {
 			var canvas_rectangle = Lethargy.Graphics.getCanvas().getBoundingClientRect();
 			//convert mouse screen position into canvas position:
 			mouse_x = Math.round(((mouseEvent_.clientX - canvas_rectangle.left)/(canvas_rectangle.right - canvas_rectangle.left)) * Lethargy.Graphics.getCanvas().width);
-			mouse_y = Math.round(((mouseEvent_.clientY - canvas_rectangle.top)/(canvas_rectangle.bottom - canvas_rectangle.top)) * Lethargy.Graphics.getCanvas().height);			
+			mouse_y = Math.round(((mouseEvent_.clientY - canvas_rectangle.top)/(canvas_rectangle.bottom - canvas_rectangle.top)) * Lethargy.Graphics.getCanvas().height);	
 						
 		},
 
@@ -297,7 +276,45 @@ Lethargy.MouseEventManager = (function() {
 	}
 	
 	return {
+		
+		initialize : function() {
+			var canvas = Lethargy.Graphics.getCanvas();
+			canvas.addEventListener("mousemove", function(event) {
+				Lethargy.Mouse.updateMouseCoordinates(event);
+				if(event.button === 0) { //2 for right click, 1 for middle. NOTE: DIFF ON IE 8.
+					Lethargy.MouseEventManager.checkMouseEvents(Lethargy.MouseEventTypes.mousemove);
+				}
+			});
+			
+			canvas.addEventListener("mousedown", function(event) {
+				Lethargy.Mouse.updateMouseCoordinates(event);
+				if(event.button === 0) {
+					Lethargy.MouseEventManager.checkMouseEvents(Lethargy.MouseEventTypes.mousedown);
+				}
+			});
+			
+			canvas.addEventListener("mouseup", function(event) {
+				Lethargy.Mouse.updateMouseCoordinates(event);
+				if(event.button === 0) {
+					Lethargy.MouseEventManager.checkMouseEvents(Lethargy.MouseEventTypes.mouseup);
+				}
+			});
+		},
+		
 		createMouseEvent : function(type_, parent_, offset_x_, offset_y_, width_, height_, event_) {
+			if(parent_ === undefined) {
+				console.log("Attempting to create mouse event on invalid object");
+				return;
+			}
+			if(parent_.objectType !== "window" && parent_.objectType !== "entity") {
+				console.log("Attempting to create mouse event on object of type '" + parent_.objectType + "'");
+				return;					
+			}
+			if( (width_ <= 0 && width_ !== -1)  || (height_ <= 0 && height_ !== -1)) {
+				console.log("Attempting to create mouse event with invalid dimensions");
+				return;						
+			}
+			
 			mouseEvents[type_].push(new Lethargy.MouseEvent(type_, parent_, offset_x_, offset_y_, width_, height_, event_));
 		},
 		
@@ -316,25 +333,29 @@ var Lethargy = Lethargy||{};
 
 Lethargy.ResourceManager = (function() {
 	var images = [];
+	var IDIterator = 0;
 	
 	return {
 		loadImage : function(path_, callback_) {
+			Lethargy.System.increaseNumberOfNeededResources();
+			var reservedID = IDIterator;//this way, elements are always placed in the array in the exact order that loadImage() is called.
+			IDIterator++;
 			var img = new Image();
 			img.onerror = function(){
-				console.log("Failed to load image: " + path_);
+				Lethargy.System.printError("Failed to load image: " + path_);
 				callback_(undefined);
 			};
 			img.onload = function() {
-				console.log("Succesfully loaded image: " + path_);
-				images.push(img);
-				callback_(images.length-1);
+				Lethargy.System.increaseNumberOfLoadedResources();
+				images[reservedID] = img;
+				callback_(reservedID);
 			}
-			img.src = path_;			
+			img.src = path_;
 		},
 		
 		getImage : function(id_) {
 			if(images[id_] === undefined) {
-				console.log("Attempted to fetch image with unknown id: " + id_);
+				Lethargy.System.printError("Attempted to fetch image with unknown id: " + id_);
 			}
 			return images[id_];
 		}
@@ -346,6 +367,7 @@ Lethargy.ResourceManager = (function() {
 var Lethargy = Lethargy||{};
 
 Lethargy.SpriteSheet = function(id_, resource_, spriteWidth_, spriteHeight_) {
+	this.objectType = "spritesheet";
 	this.resource = resource_; //reference to actual resource
 	this.spriteWidth = spriteWidth_;
 	this.spriteHeight = spriteHeight_;
@@ -420,11 +442,72 @@ Lethargy.SpriteSheetManager = (function() {
 	}
 })();
 
+/*######### system.js #########*/
+
+var Lethargy = Lethargy||{};
+
+Lethargy.System = (function() {
+	var initializeFunction;
+	var redrawFunction;
+	
+	var resourcesNeeded = 0;
+	var resourcesLoaded = 0;
+	
+	return {
+		start : function(loadResourceFunc_, initializeFunc_, redrawFunc_) {
+			initializeFunction = initializeFunc_;
+			redrawFunction = redrawFunc_;
+			
+			loadResourceFunc_();
+			this.checkResourceLoop();
+		},
+		
+		checkResourceLoop : function() {
+			if(resourcesLoaded === resourcesNeeded) {
+				initializeFunction();
+				redrawFunction();
+				
+			}else {
+				requestAnimationFrame(Lethargy.System.checkResourceLoop);
+			}
+			//////////////////////////////////////////////////
+			//// perhaps a timeout in here would be nice /////
+			//////////////////////////////////////////////////
+		},
+		 
+		printError : function(text_) {
+			console.log("ERROR: " + text_);
+		},
+		
+		printMessage : function(text_) {
+			console.log("MESSAGE: " + text_);
+		},
+		
+		fatalError : function(text_) {
+			alert("Fatal Error: " + text_);
+			running = false;
+		},
+		
+		increaseNumberOfNeededResources : function() {
+			resourcesNeeded++;
+		},
+		
+		increaseNumberOfLoadedResources : function() {
+			resourcesLoaded++;
+		},
+		
+		redraw : function() {
+			redrawFunction();
+		}
+	}
+})();
+
 /*######### window.js #########*/
 
 var Lethargy = Lethargy||{};
 
 Lethargy.Window = function(id_, x_, y_, width_, height_, spriteSheet_) {
+	this.objectType = "window";
 	this.id = id_;
 	this.x = x_;
 	this.y = y_;
@@ -435,13 +518,6 @@ Lethargy.Window = function(id_, x_, y_, width_, height_, spriteSheet_) {
 }
 
 Lethargy.Window.prototype.draw = function() {
-	//draw inner
-	
-	if(this.spriteSheet === undefined) {
-		console.log("Attempting to draw window with undefined spritesheet");
-		return -1;
-	}
-	
 	for(var yi = 0; yi < (((this.y + this.height) - this.y) - (this.spriteSheet.spriteHeight * 2)) / this.spriteSheet.spriteHeight; yi++) {
 		for(var xi = 0; xi < (((this.x + this.width) - this.x) - (this.spriteSheet.spriteWidth * 2)) / this.spriteSheet.spriteHeight; xi++) {
 			this.spriteSheet.drawSprite(4, this.x + this.spriteSheet.spriteWidth + (xi * this.spriteSheet.spriteWidth), this.y + this.spriteSheet.spriteHeight + (yi * this.spriteSheet.spriteHeight));
@@ -474,16 +550,19 @@ var Lethargy = Lethargy||{};
 Lethargy.WindowManager = (function() {
 	var windows = [];
 	var IDIterator = 0;
-	return {
+	
+	return {	
 		createWindow : function(x_, y_, width_, height_, spriteSheet_) {
-			if(spriteSheet_ === undefined) {
-				console.log("Attempting to create window with undefined spriteSheet");
-				return -1;
+			if(spriteSheet_ === undefined || spriteSheet_.objectType !== "spritesheet") {
+				Lethargy.System.printError("Attempting to create window with invalid spritesheet");
+				return;
 			}
-			
+			if(width_ <= 0 || height_ <= 0) {
+				Lethargy.System.printError("Attempting to create window with invalid dimensions");
+				return;
+			}
 			windows.push(new Lethargy.Window(IDIterator, x_, y_, width_, height_, spriteSheet_));
 			IDIterator++;
-			console.log("window created with id: " + (IDIterator-1));
 			return IDIterator-1;
 		},
 		
@@ -501,6 +580,7 @@ Lethargy.WindowManager = (function() {
 					return windows[i];
 				}
 			}
+			return;
 		}
 	}
 })();

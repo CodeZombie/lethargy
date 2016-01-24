@@ -1,6 +1,7 @@
 var Lethargy = Lethargy||{};
 
 Lethargy.SpriteSheet = function(id_, resource_, spriteWidth_, spriteHeight_) {
+	this.objectType = "spritesheet";
 	this.resource = resource_; //reference to actual resource
 	this.spriteWidth = spriteWidth_;
 	this.spriteHeight = spriteHeight_;

@@ -3,15 +3,17 @@ var Lethargy = Lethargy||{};
 Lethargy.Graphics = (function() {
 	var canvas;
 	var canvasContext;
-	var redrawFunction;
 	var backgroundColor = "#0f0";
 	var scale = 1;
 	
 	return {
 		attachCanvas : function(canvas_) {
+			if(canvas_ === null || canvas_.tagName.toLowerCase() !== "canvas") {
+				Lethargy.System.fatalError("Attempted to attach invalid canvas");
+				return;
+			}
 			canvas = canvas_;
 			canvasContext = canvas.getContext("2d");
-			//Lethargy.system.init(); init mouse event listeners for canvas.
 		},
 		
 		getCanvas : function() {
@@ -32,16 +34,10 @@ Lethargy.Graphics = (function() {
 		
 		disableInterpolation : function() {
 			canvasContext.imageSmoothingEnabled = false;
-			canvasContext.webkitImageSmoothingEnabled = false;
+			/////////////////////////
+			// Does not work on IE //
+			/////////////////////////
 			canvasContext.mozImageSmoothingEnabled = false;			
-		},
-		
-		attachRedrawFunction : function(f_) {
-			redrawFunction = f_;
-		},
-		
-		redraw : function() {
-			redrawFunction();
 		},
 		
 		clear : function() {
@@ -49,6 +45,10 @@ Lethargy.Graphics = (function() {
 		},
 		
 		drawSquare : function(x_, y_, w_, h_, color_) {
+			if(w_ <= 0 || h_ <= 0) {
+				Lethargy.System.printError("Attempted to draw square with invalid dimensions");
+				return;
+			}
 			canvasContext.beginPath();
 			canvasContext.strokeStyle = color_;
 			canvasContext.rect(x_*scale, y_*scale, w_*scale, h_*scale);

@@ -6,6 +6,10 @@ Lethargy.EntityManager = (function() {
 	
 	return{
 		createEntity : function(x_, y_, width_, height_) {
+			if(width_ <= 0 && height_ <= 0) {
+				Lethargy.System.printError("Attempted to create entity with invalid dimensions");
+			}
+			
 			entities.push(new Lethargy.Entity(IDIterator, x_, y_));
 			IDIterator++;
 			return IDIterator-1;
@@ -17,7 +21,7 @@ Lethargy.EntityManager = (function() {
 					return i;
 				}
 			}
-			return -1;			
+			return;			
 		},
 		
 		getEntity : function(id_) {
@@ -26,7 +30,7 @@ Lethargy.EntityManager = (function() {
 					return entities[i];
 				}
 			}
-			return undefined;
+			return;
 		},
 		
 		deleteEntity : function(id_) {

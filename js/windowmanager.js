@@ -3,16 +3,19 @@ var Lethargy = Lethargy||{};
 Lethargy.WindowManager = (function() {
 	var windows = [];
 	var IDIterator = 0;
-	return {
+	
+	return {	
 		createWindow : function(x_, y_, width_, height_, spriteSheet_) {
-			if(spriteSheet_ === undefined) {
-				console.log("Attempting to create window with undefined spriteSheet");
-				return -1;
+			if(spriteSheet_ === undefined || spriteSheet_.objectType !== "spritesheet") {
+				Lethargy.System.printError("Attempting to create window with invalid spritesheet");
+				return;
 			}
-			
+			if(width_ <= 0 || height_ <= 0) {
+				Lethargy.System.printError("Attempting to create window with invalid dimensions");
+				return;
+			}
 			windows.push(new Lethargy.Window(IDIterator, x_, y_, width_, height_, spriteSheet_));
 			IDIterator++;
-			console.log("window created with id: " + (IDIterator-1));
 			return IDIterator-1;
 		},
 		
@@ -30,6 +33,7 @@ Lethargy.WindowManager = (function() {
 					return windows[i];
 				}
 			}
+			return;
 		}
 	}
 })();

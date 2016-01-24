@@ -5,11 +5,9 @@
 	<link rel="stylesheet" href="style/style.css">
 	<script type="text/javascript" src="engine.js"></script>
 	<script type="text/javascript">
-		//load resources BEFORE init() starts executing. this way, everything loads in order.
 		//USE CHERRYPY AND SQLALCHEMY FOR THE BACKEND
-		loadResource();
 
-		function loadResource() {
+		function loadResources() {
 			Lethargy.ResourceManager.loadImage("ground.png", function(id_) {
 				resource_ground_tiles = id_;
 			});
@@ -21,60 +19,46 @@
 			});
 		}
 		
-		function init() {
+		function setupScene() {
 			Lethargy.Graphics.attachCanvas(document.getElementById("gameCanvas"));
 			Lethargy.Graphics.getCanvas().width = 512;
 			Lethargy.Graphics.getCanvas().height = 384;
 			Lethargy.Graphics.disableInterpolation();
 			Lethargy.Graphics.setScale(1);
-			Lethargy.Graphics.attachRedrawFunction(draw);
 			
-			Lethargy.Mouse.initialize();
+			Lethargy.MouseEventManager.initialize(); //this can be internal.
 
 			ground_spritesheet = Lethargy.SpriteSheetManager.createSpriteSheet(Lethargy.ResourceManager.getImage(resource_ground_tiles), 32, 32);
 			entity_spritesheet = Lethargy.SpriteSheetManager.createSpriteSheet(Lethargy.ResourceManager.getImage(resource_items), 32, 32);
 			interface_spritesheet = Lethargy.SpriteSheetManager.createSpriteSheet(Lethargy.ResourceManager.getImage(resource_interface), 32, 32);
 			
-			thing = Lethargy.EntityManager.getEntity(Lethargy.EntityManager.createEntity(64, 64, 32, 32));
+			
+			thing_id = Lethargy.EntityManager.createEntity(64, 64, 32, 32);
+			thing = Lethargy.EntityManager.getEntity(thing_id);
 			thing.setSprite(Lethargy.SpriteSheetManager.getSpriteSheet(resource_items), 0);
 			
 			Lethargy.MouseEventManager.createMouseEvent(Lethargy.MouseEventTypes.mouseup, thing, 0,0,32,32, function() { alert("CLICK"); });
-			
-			//type_, parent_, offset_x_, offset_y_, width_, height_, event_
-			
-			
+
 			Lethargy.MapManager.populate('{"mapwidth"  : 16, "mapheight" : 12, "tiles"  : [9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,8] }');
 			Lethargy.MapManager.setSpriteSheet(Lethargy.SpriteSheetManager.getSpriteSheet(ground_spritesheet));
 			
-			var dong = Lethargy.WindowManager.createWindow(128,128,128,128, Lethargy.SpriteSheetManager.getSpriteSheet(interface_spritesheet));
+			var doop = Lethargy.WindowManager.createWindow(128,128,128,128, Lethargy.SpriteSheetManager.getSpriteSheet(interface_spritesheet));
 			
-			Lethargy.MouseEventManager.createMouseEvent(Lethargy.MouseEventTypes.mouseup, Lethargy.WindowManager.getWindow(dong), 0,0,-1,-1, function() { alert("WINDOW CLICK"); });
-			
-			draw();
-			//loop();
+			Lethargy.MouseEventManager.createMouseEvent(Lethargy.MouseEventTypes.mouseup, Lethargy.WindowManager.getWindow(doop), 0,0,-1,-1, function() { alert("WINDOW CLICK"); });
 		}
 		
-		function loop() {
-		  requestAnimationFrame(loop); //loops without blocking the entire browser thread
-		}
-		
-		function draw() {
+		function redraw() {
 			Lethargy.Graphics.clear();
 			Lethargy.MapManager.draw();
 			Lethargy.EntityManager.draw();
 			Lethargy.WindowManager.draw();
-			//Lethargy.Graphics.drawMap(ground_spritesheet);
-			//Lethargy.EntityManager.draw();
-			//Lethargy.Interface.WindowManager.draw(interface_spritesheet);
 		}
-		
-		//so the engine can redraw the screen when it needs to
 
 	</script>
 	<link href='https://fonts.googleapis.com/css?family=Oxygen' rel='stylesheet' type='text/css'>
 	<title>game screen</title>
 </head>
-<body onLoad="init();">
+<body onLoad="Lethargy.System.start(loadResources, setupScene, redraw);">
 	<div class="grid">
 		<div class="row">
 			<div class="column" id="canvasContainer">

@@ -1,6 +1,7 @@
 var Lethargy = Lethargy||{};
 
 Lethargy.Window = function(id_, x_, y_, width_, height_, spriteSheet_) {
+	this.objectType = "window";
 	this.id = id_;
 	this.x = x_;
 	this.y = y_;
@@ -11,13 +12,6 @@ Lethargy.Window = function(id_, x_, y_, width_, height_, spriteSheet_) {
 }
 
 Lethargy.Window.prototype.draw = function() {
-	//draw inner
-	
-	if(this.spriteSheet === undefined) {
-		console.log("Attempting to draw window with undefined spritesheet");
-		return -1;
-	}
-	
 	for(var yi = 0; yi < (((this.y + this.height) - this.y) - (this.spriteSheet.spriteHeight * 2)) / this.spriteSheet.spriteHeight; yi++) {
 		for(var xi = 0; xi < (((this.x + this.width) - this.x) - (this.spriteSheet.spriteWidth * 2)) / this.spriteSheet.spriteHeight; xi++) {
 			this.spriteSheet.drawSprite(4, this.x + this.spriteSheet.spriteWidth + (xi * this.spriteSheet.spriteWidth), this.y + this.spriteSheet.spriteHeight + (yi * this.spriteSheet.spriteHeight));
